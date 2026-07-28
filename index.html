@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Market Cascade & Minsky Systemic Fragility Engine</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #070a11;
+            --panel-bg: #111827;
+            --border-color: #1f2937;
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-yellow: #facc15;
+            --accent-red: #f87171;
+        }
+
+        * { box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+        header { display: flex; justify-content: space-between; align-items: center; background: var(--panel-bg); padding: 18px 25px; border-radius: 8px; border: 1px solid var(--border-color); }
+        h1 { margin: 0; font-size: 1.35rem; color: var(--accent-blue); display: flex; align-items: center; gap: 10px; }
+        .subtitle { font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; }
+
+        .clock-container { text-align: right; font-family: monospace; }
+        .clock-time { font-size: 1.2rem; font-weight: bold; color: var(--accent-blue); }
+        .clock-label { font-size: 0.72rem; color: var(--text-muted); }
+
+        /* Dashboard Grid */
+        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+        .card-title { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; }
+
+        /* Top Detailed Empirical Metrics Row */
+        .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .metric-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+        .metric-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .metric-val-container { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+        .metric-value { font-size: 1.25rem; font-weight: 700; color: #f8fafc; }
+        .danger-badge { font-size: 0.68rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; border: 1px solid transparent; }
+        .danger-red { color: var(--accent-red); background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); }
+        .danger-yellow { color: var(--accent-yellow); background: rgba(234, 179, 8, 0.15); border-color: rgba(234, 179, 8, 0.3); }
+        .danger-green { color: var(--accent-green); background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.3); }
+
+        .metric-guide { font-size: 0.67rem; color: #94a3b8; margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 6px; line-height: 1.35; }
+
+        /* Stepper Navigation Indicator (Data Driven) */
+        .stepper-nav { display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+        .step-btn { flex: 1; padding: 8px 10px; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-align: center; transition: all 0.2s; cursor: default; }
+        .step-btn.active { background: #1e293b; color: var(--accent-blue); border-color: #0284c7; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
+
+        .lesson-box { background: var(--bg-color); border-left: 4px solid #0284c7; border-radius: 4px; padding: 12px 16px; }
+        .lesson-title { font-size: 0.85rem; font-weight: 700; color: var(--accent-blue); margin-bottom: 4px; }
+        .lesson-text { font-size: 0.78rem; color: #cbd5e1; line-height: 1.4; margin: 0; }
+
+        /* Score & Meters */
+        .summary-scorebox { background: #030712; border: 2px solid #ef4444; border-radius: 8px; padding: 16px; display: flex; align-items: center; gap: 20px; transition: border-color 0.3s; }
+        .score-circle { width: 85px; height: 85px; border-radius: 50%; background: #111827; border: 4px solid #ef4444; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color 0.3s; }
+        .score-num { font-size: 1.6rem; font-weight: 800; color: #f8fafc; line-height: 1; }
+        .score-denom { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; }
+        .score-text { display: flex; flex-direction: column; gap: 4px; }
+        .score-title { font-size: 0.95rem; font-weight: 700; color: var(--accent-red); text-transform: uppercase; letter-spacing: 0.05em; }
+        .score-desc { font-size: 0.78rem; color: #cbd5e1; line-height: 1.35; }
+
+        .meter-container { display: flex; flex-direction: column; gap: 6px; }
+        .meter-label { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; }
+        .meter-bar-bg { width: 100%; height: 12px; background: #1e293b; border-radius: 6px; overflow: hidden; }
+        .meter-bar-fill { height: 100%; width: 0%; transition: width 0.6s ease-out, background 0.3s; }
+
+        .btn { background: #0284c7; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-size: 0.75rem; }
+        .btn-warning { background: #d97706; }
+        .btn-danger { background: #dc2626; }
+        .btn-secondary { background: #1e293b; border: 1px solid #374151; color: var(--accent-blue); }
+        .btn-secondary:hover { background: #334155; }
+
+        .log-container { height: 120px; background: #030712; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; font-size: 0.78rem; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        .log-entry { margin: 0; line-height: 1.4; border-bottom: 1px solid #111827; padding-bottom: 4px; }
+
+        /* Dynamic Quote Box */
+        .quote-box { background: var(--bg-color); border-left: 3px solid var(--accent-blue); padding: 12px; border-radius: 0 4px 4px 0; display: flex; flex-direction: column; gap: 8px; }
+        .quote-title { font-weight: 700; color: var(--accent-blue); font-size: 0.78rem; }
+        .quote-text { font-size: 0.78rem; color: #cbd5e1; line-height: 1.4; margin: 0; font-style: italic; }
+
+        /* Gemini AI Chat Copilot Styles */
+        .gemini-chat-card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+        
+        .api-key-container { display: flex; flex-direction: column; gap: 6px; background: #030712; padding: 10px 14px; border-radius: 6px; border: 1px solid #374151; }
+        .api-key-label { font-size: 0.72rem; font-weight: bold; color: var(--accent-blue); display: flex; justify-content: space-between; align-items: center; }
+        .api-key-field { background: var(--bg-color); border: 1px solid var(--border-color); color: #f8fafc; font-family: monospace; font-size: 0.8rem; padding: 8px 10px; border-radius: 4px; width: 100%; outline: none; }
+        .api-key-field:focus { border-color: var(--accent-blue); box-shadow: 0 0 6px rgba(56, 189, 248, 0.3); }
+
+        .chat-history { height: 240px; background: #030712; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.82rem; }
+        .chat-msg { display: flex; flex-direction: column; gap: 4px; max-width: 88%; line-height: 1.4; }
+        .chat-msg.user { align-self: flex-end; background: #0284c7; color: white; padding: 8px 12px; border-radius: 12px 12px 0 12px; }
+        .chat-msg.gemini { align-self: flex-start; background: #1e293b; border: 1px solid #334155; color: #f8fafc; padding: 10px 14px; border-radius: 12px 12px 12px 0; }
+        .chat-msg.error { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+        .chat-msg-sender { font-size: 0.65rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
+        .chat-input-row { display: flex; gap: 8px; }
+        .chat-input { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 14px; color: var(--text-main); font-size: 0.82rem; outline: none; }
+        .chat-input:focus { border-color: var(--accent-blue); }
+
+        /* Region Tabs & Market Grid */
+        .region-tabs { display: flex; gap: 10px; border-bottom: 2px solid var(--border-color); margin-top: 10px; }
+        .tab-btn { padding: 10px 18px; background: var(--panel-bg); border: 1px solid var(--border-color); border-bottom: none; border-radius: 8px 8px 0 0; color: var(--text-muted); font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: #1e293b; color: var(--accent-blue); border-color: #0284c7; border-bottom: 2px solid #0284c7; }
+
+        .market-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 15px; }
+        .market-card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s, border-color 0.2s; }
+        .market-card:hover { transform: translateY(-2px); border-color: var(--accent-blue); }
+        .market-card.selected-active { border: 2px solid var(--accent-blue); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); }
+        .market-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .market-title { font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 6px; }
+        
+        .badge { font-size: 0.68rem; font-weight: bold; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; }
+        .badge-open { background: rgba(0, 230, 118, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .badge-closed { background: rgba(255, 82, 82, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); }
+        .badge-pre { background: rgba(255, 215, 64, 0.15); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
+
+        .market-meta { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.35; }
+        .tv-widget-container { border-radius: 6px; overflow: hidden; margin-bottom: 10px; background: #000; height: 180px; width: 100%; position: relative; }
+        .tv-widget-container iframe { width: 100%; height: 100%; border: none; pointer-events: none; }
+        
+        .trend-box { background: var(--bg-color); border-radius: 4px; padding: 8px 10px; font-size: 0.78rem; border: 1px dashed var(--border-color); line-height: 1.4; margin-bottom: 12px; }
+        .trend-title { font-weight: bold; color: var(--accent-yellow); margin-bottom: 3px; display: block; }
+
+        /* Individual World Market Mini Score Panel */
+        .mini-fragility-box { background: #030712; border: 1px solid #374151; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.3s; }
+        .mini-score-header { display: flex; align-items: center; gap: 10px; }
+        .mini-score-circle { width: 42px; height: 42px; border-radius: 50%; background: #111827; border: 3px solid #ef4444; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color 0.3s; }
+        .mini-score-num { font-size: 0.95rem; font-weight: 800; color: #f8fafc; }
+        .mini-score-meta { display: flex; flex-direction: column; }
+        .mini-score-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
+        .mini-score-sub { font-size: 0.65rem; color: var(--text-muted); }
+
+        .mini-meter-row { display: flex; flex-direction: column; gap: 3px; }
+        .mini-meter-lbl { display: flex; justify-content: space-between; font-size: 0.68rem; font-weight: 600; }
+        .mini-meter-bg { width: 100%; height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+        .mini-meter-fill { height: 100%; width: 0%; transition: width 0.4s ease-out, background 0.3s; }
+
+        .chart-container { position: relative; height: 260px; width: 100%; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Global Market Cascade & Minsky Systemic Fragility Engine</h1>
+            <div class="subtitle">Data-Driven Live Macro Monitor & Algorithmic Minsky Stage Classifier</div>
+        </div>
+        <div class="clock-container">
+            <div class="clock-time" id="localClock">00:00:00 MST</div>
+            <div class="clock-label">Mountain Time (Auto MST/MDT)</div>
+        </div>
+    </header>
+
+    <!-- Section 1: Empirical Fragility Metrics with Full Range Guides -->
+    <div class="metrics-row">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label" id="lbl-market-name">Equity Composite (US S&P 500)</div>
+                <div class="metric-val-container">
+                    <span class="metric-value" id="m-sp500">$7,413.18</span>
+                    <span class="danger-badge danger-yellow" id="badge-sp500">62% DANGER</span>
+                </div>
+            </div>
+            <div class="metric-guide">
+                <strong>Target Valuation Ranges:</strong><br>
+                • <strong>Safe (&lt;15x CAPE):</strong> Deep Structural Value<br>
+                • <strong>Warning (20–30x CAPE):</strong> Extended Valuation<br>
+                • <strong>Danger (&gt;35x CAPE):</strong> Peak Bubble Overvaluation
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div>
+                <div class="metric-label" id="lbl-vix-name">Market Volatility Index</div>
+                <div class="metric-val-container">
+                    <span class="metric-value" id="m-vix">18.67</span>
+                    <span class="danger-badge danger-yellow" id="badge-vix">52% WARN</span>
+                </div>
+            </div>
+            <div class="metric-guide">
+                <strong>Target Volatility Ranges:</strong><br>
+                • <strong>Safe (&gt;25.0 VIX):</strong> Fear Cleaned / Low Leverage<br>
+                • <strong>Warning (15.0–25.0 VIX):</strong> Normal Volatility<br>
+                • <strong>Danger (&lt;14.0 VIX):</strong> Extreme Complacency Zone
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div>
+                <div class="metric-label" id="lbl-spread-name">High-Yield Credit Spread</div>
+                <div class="metric-val-container">
+                    <span class="metric-value" id="m-spread">2.69%</span>
+                    <span class="danger-badge danger-red" id="badge-spread">82% DANGER</span>
+                </div>
+            </div>
+            <div class="metric-guide">
+                <strong>Target Spread Ranges:</strong><br>
+                • <strong>Safe (&gt;6.0%):</strong> Wide Safety Premium<br>
+                • <strong>Warning (3.8%–6.0%):</strong> Fair Default Pricing<br>
+                • <strong>Danger (&lt;3.5%):</strong> Ultra-Compressed / Taut
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div>
+                <div class="metric-label" id="lbl-leverage-name">Margin Debt / Credit Ratio</div>
+                <div class="metric-val-container">
+                    <span class="metric-value" id="m-leverage">2.04%</span>
+                    <span class="danger-badge danger-red" id="badge-leverage">88% DANGER</span>
+                </div>
+            </div>
+            <div class="metric-guide">
+                <strong>Target Leverage Ranges:</strong><br>
+                • <strong>Safe (&lt;1.25%):</strong> Unleveraged Equity Baseline<br>
+                • <strong>Warning (1.25%–1.85%):</strong> Moderate Leverage<br>
+                • <strong>Danger (&gt;2.00%):</strong> High Margin Vulnerability
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Minsky Engine & Auto-Determined Stage Display -->
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-title">
+                <span id="chart-title-text">Minsky Instability Cycle (US S&P 500)</span>
+                <span id="status-tag" style="font-size: 0.75rem; color: #4ade80;">● Auto-Determined from Live Data</span>
+            </div>
+
+            <!-- Stepper Nav (Acts as Auto-Determined Stage Indicator) -->
+            <div class="stepper-nav">
+                <div class="step-btn" id="btn-stage-1">1. Hedge Phase</div>
+                <div class="step-btn" id="btn-stage-2">2. Speculative Phase</div>
+                <div class="step-btn" id="btn-stage-3">3. Ponzi Phase</div>
+                <div class="step-btn" id="btn-stage-4">4. Minsky Moment</div>
+            </div>
+
+            <div class="lesson-box" id="lesson-container">
+                <div class="lesson-title" id="lesson-title">Evaluating Live Market State...</div>
+                <p class="lesson-text" id="lesson-text">Analyzing real-time valuation, credit spreads, volatility indices, and margin debt leverage...</p>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="stressChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Calculated Systemic Score</div>
+            
+            <div class="summary-scorebox" id="main-scorebox">
+                <div class="score-circle" id="main-score-circle">
+                    <div class="score-num" id="agg-score-num">--</div>
+                    <div class="score-denom">FRAGILITY</div>
+                </div>
+                <div class="score-text">
+                    <div class="score-title" id="agg-score-title">CALCULATING...</div>
+                    <div class="score-desc" id="agg-score-desc">
+                        Systemic fragility is being evaluated dynamically against live market metrics.
+                    </div>
+                </div>
+            </div>
+
+            <div class="meter-container">
+                <div class="meter-label">
+                    <span>Market Complacency Index</span>
+                    <span id="lbl-complacency" style="color: #4ade80;">--</span>
+                </div>
+                <div class="meter-bar-bg">
+                    <div class="meter-bar-fill" id="bar-complacency" style="background: #4ade80; width: 0%;"></div>
+                </div>
+            </div>
+
+            <div class="meter-container">
+                <div class="meter-label">
+                    <span>Credit Premium Compression</span>
+                    <span id="lbl-credit" style="color: #facc15;">--</span>
+                </div>
+                <div class="meter-bar-bg">
+                    <div class="meter-bar-fill" id="bar-credit" style="background: #facc15; width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Interactive Dynamic Minsky Quote Switcher -->
+            <div class="quote-box">
+                <div class="quote-title" id="minsky-quote-title">Minsky Paradox (Core Theorem):</div>
+                <p class="quote-text" id="minsky-quote-text">"Stability breeds instability. The more comfortable market participants feel, the more risk they take, making the eventual correction more violent."</p>
+                <button class="btn btn-secondary" onclick="rotateMinskyQuote()" style="padding: 4px 8px; font-size: 0.65rem; align-self: flex-start; margin-top: 2px;">↻ Rotate Paradox Principle (1 / 50)</button>
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-top: auto;">
+                <button class="btn btn-warning" style="flex: 1;" onclick="triggerInstructionalShock(-0.03)">Simulate -3% Stress</button>
+                <button class="btn btn-danger" style="flex: 1;" onclick="triggerInstructionalShock(-0.06)">Simulate -6% Crash</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cause & Effect Engine Log -->
+    <div class="card">
+        <div class="card-title">Tutor Log & Cross-Border Transmission Engine</div>
+        <div class="log-container" id="eventLog">
+            <div class="log-entry" style="color: #38bdf8;">🎓 Engine Ready: Live data feeds connected. Select any World Index below to update top metrics dynamically on this page.</div>
+        </div>
+    </div>
+
+    <!-- Gemini Copilot Preloaded Assistant Panel -->
+    <div class="gemini-chat-card">
+        <div class="card-title">
+            <span>✨ Gemini Live Macro Analyst (Gemini API Engine)</span>
+            <span style="font-size: 0.7rem; color: #38bdf8;">● Manual Model Selector Enabled</span>
+        </div>
+        
+        <div class="api-key-container">
+            <div class="api-key-label">
+                <span>🔑 Paste Gemini API Key Here:</span>
+                <span id="keyStatus" style="color: #4ade80;"></span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="geminiApiKey" class="api-key-field" value="" placeholder="Paste valid Gemini key starting with AQ..." onchange="saveApiKeyLocally()">
+                <button class="btn btn-secondary" onclick="fetchModelsUI()" id="btnFetchModels" style="white-space: nowrap;">Load Models</button>
+            </div>
+            <!-- Active model options grouped by speed to depth -->
+            <select id="modelSelector" class="api-key-field" style="margin-top: 8px; display: none; cursor: pointer;">
+                <option value="">Select active model...</option>
+            </select>
+        </div>
+
+        <div class="chat-history" id="chatHistory">
+            <div class="chat-msg gemini">
+                <span class="chat-msg-sender">Gemini Macro Analyst</span>
+                I am preloaded with real-time market telemetry (Index Level, Volatility, Spreads, Leverage, exact local time clock, and Minsky Stages). Paste your key into the box above, click <b>"Load Models"</b> to select an active model, and ask me anything!
+            </div>
+        </div>
+        <div class="chat-input-row">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Ask Gemini about active credit risk, current time visibility, or Minsky dynamics..." onkeydown="if(event.key==='Enter') sendGeminiQuery()">
+            <button class="btn" onclick="sendGeminiQuery()">Ask Gemini</button>
+        </div>
+    </div>
+
+    <!-- Section 3: Regional Tabs (In 24-Hour Sequence of Market Open) -->
+    <div class="region-tabs">
+        <button class="tab-btn active" id="tab-label-asia" onclick="switchTab('region-asia', event)">1. Asia-Pacific</button>
+        <button class="tab-btn" id="tab-label-me-sa" onclick="switchTab('region-me-sa', event)">2. Middle East & South Asia</button>
+        <button class="tab-btn" id="tab-label-europe" onclick="switchTab('region-europe', event)">3. Europe & Africa</button>
+        <button class="tab-btn" id="tab-label-americas" onclick="switchTab('region-americas', event)">4. Americas</button>
+    </div>
+
+    <!-- TAB 1: ASIA-PACIFIC -->
+    <div id="region-asia" class="tab-content active">
+        <div class="market-grid">
+            
+            <!-- NZD Forex -->
+            <div class="market-card" id="card-nz" onclick="selectMarket('nz')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇳🇿 Pacific FX (NZD/USD)</span>
+                        <span class="badge" id="badge-nz">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-nz">
+                        <b>Opens:</b> ~15:00 MDT (First Global Open)<br>
+                        <b>Ticker:</b> FX:NZDUSD
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=FX%3ANZDUSD&colorTheme=dark&trendLineColor=rgba(56,189,248,1)&underLineColor=rgba(56,189,248,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> First tradable price action of the new calendar day. Acts as early risk sentiment bellwether for Asia.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-nz"></div>
+            </div>
+
+            <!-- Australia ASX 200 -->
+            <div class="market-card" id="card-au" onclick="selectMarket('au')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇦🇺 Australia (ASX 200)</span>
+                        <span class="badge" id="badge-au">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-au">
+                        <b>Opens:</b> 18:00 MDT (10:00 AM AEST)<br>
+                        <b>Benchmark Ticker:</b> ASX:XJO
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=ASX%3AXJO&colorTheme=dark&trendLineColor=rgba(74,222,128,1)&underLineColor=rgba(74,222,128,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> Anchors Asia-Pacific resource sector, heavy materials, mining giants (BHP, Rio Tinto), and domestic banking health.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-au"></div>
+            </div>
+
+            <!-- Japan Nikkei 225 -->
+            <div class="market-card" id="card-jp" onclick="selectMarket('jp')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇯🇵 Japan (Nikkei 225 Index)</span>
+                        <span class="badge" id="badge-jp">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-jp">
+                        <b>Opens:</b> 18:00 MDT (09:00 AM JST)<br>
+                        <b>Benchmark Ticker:</b> OANDA:JP225USD
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=OANDA%3AJP225USD&colorTheme=dark&trendLineColor=rgba(250,204,21,1)&underLineColor=rgba(250,204,21,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> Primary liquidity pillar for East Asian equities. Key gauge for Yen carry trade flows and global export manufacturing.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-jp"></div>
+            </div>
+
+            <!-- South Korea Broad Economy -->
+            <div class="market-card" id="card-kr" onclick="selectMarket('kr')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇰🇷 South Korea Broad Market</span>
+                        <span class="badge" id="badge-kr">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-kr">
+                        <b>Opens:</b> 18:00 MDT (09:00 AM KST)<br>
+                        <b>Broad Benchmark Ticker:</b> AMEX:EWY
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=AMEX%3AEWY&colorTheme=dark&trendLineColor=rgba(56,189,248,1)&underLineColor=rgba(56,189,248,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens (Broad Economy):</span> Filters out tech-only concentration to capture South Korea's broader macroeconomic health across automotive, shipbuilding, chemicals, and banking sectors.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-kr"></div>
+            </div>
+
+            <!-- Hong Kong Hang Seng -->
+            <div class="market-card" id="card-cn" onclick="selectMarket('cn')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇭🇰 Hong Kong (Hang Seng)</span>
+                        <span class="badge" id="badge-cn">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-cn">
+                        <b>Opens:</b> 19:30 MDT (09:30 AM HKT)<br>
+                        <b>Benchmark Ticker:</b> HSI:HSI
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=HSI%3AHSI&colorTheme=dark&trendLineColor=rgba(248,113,113,1)&underLineColor=rgba(248,113,113,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> Core international capital portal for Greater China, enterprise technology, and regional real estate credit flows.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-cn"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TAB 2: MIDDLE EAST & SOUTH ASIA -->
+    <div id="region-me-sa" class="tab-content">
+        <div class="market-grid">
+            
+            <!-- India BSE Sensex -->
+            <div class="market-card" id="card-in" onclick="selectMarket('in')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇮🇳 India (BSE Sensex)</span>
+                        <span class="badge" id="badge-in">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-in">
+                        <b>Opens:</b> 21:45 MDT (09:15 AM IST)<br>
+                        <b>Benchmark Ticker:</b> BSE:SENSEX
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=BSE%3ASENSEX&colorTheme=dark&trendLineColor=rgba(74,222,128,1)&underLineColor=rgba(74,222,128,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> South Asia's flagship domestic growth index tracking major banking, infrastructure, IT services, and consumer conglomerates.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-in"></div>
+            </div>
+
+            <!-- Israel TA-35 -->
+            <div class="market-card" id="card-il" onclick="selectMarket('il')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇮🇱 Israel (TA-35 Index)</span>
+                        <span class="badge" id="badge-il">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-il">
+                        <b>Opens:</b> 01:00 MDT (10:00 AM IDT)<br>
+                        <b>Benchmark Ticker:</b> TASE:TA35
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=TASE%3ATA35&colorTheme=dark&trendLineColor=rgba(56,189,248,1)&underLineColor=rgba(56,189,248,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> Primary Middle Eastern technology and pharmaceutical exchange hub. Unique Sun–Thu schedule provides early week market signals.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-il"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TAB 3: EUROPE & AFRICA -->
+    <div id="region-europe" class="tab-content">
+        <div class="market-grid">
+            
+            <!-- UK FTSE 100 -->
+            <div class="market-card" id="card-uk" onclick="selectMarket('uk')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇬🇧 United Kingdom (FTSE 100)</span>
+                        <span class="badge" id="badge-uk">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-uk">
+                        <b>Opens:</b> 02:00 MDT (08:00 AM BST)<br>
+                        <b>Benchmark Ticker:</b> FOREXCOM:UK100
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=FOREXCOM%3AUK100&colorTheme=dark&trendLineColor=rgba(56,189,248,1)&underLineColor=rgba(56,189,248,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> Heavy international exposure spanning energy producers, global banking institutions, and commodity giants.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-uk"></div>
+            </div>
+
+            <!-- Germany DAX 40 -->
+            <div class="market-card" id="card-de" onclick="selectMarket('de')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇩🇪 Germany (DAX 40)</span>
+                        <span class="badge" id="badge-de">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-de">
+                        <b>Opens:</b> 02:00 MDT (09:00 AM CEST)<br>
+                        <b>Benchmark Ticker:</b> XETR:DAX
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=XETR%3ADAX&colorTheme=dark&trendLineColor=rgba(250,204,21,1)&underLineColor=rgba(250,204,21,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> Core industrial and manufacturing index for Continental Europe, reflects global automotive, industrial, and chemical demand.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-de"></div>
+            </div>
+
+            <!-- Eurozone Stoxx 50 -->
+            <div class="market-card" id="card-eu" onclick="selectMarket('eu')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇪🇺 Eurozone (STOXX Europe 50)</span>
+                        <span class="badge" id="badge-eu">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-eu">
+                        <b>Opens:</b> 02:00 MDT (09:00 AM CEST)<br>
+                        <b>Benchmark Ticker:</b> FOREXCOM:EU50
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=FOREXCOM%3AEU50&colorTheme=dark&trendLineColor=rgba(74,222,128,1)&underLineColor=rgba(74,222,128,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> Multi-country Eurozone benchmark covering France, Netherlands, Germany, and Southern Europe aggregate corporate strength.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-eu"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TAB 4: AMERICAS -->
+    <div id="region-americas" class="tab-content">
+        <div class="market-grid">
+            
+            <!-- US Stock Market Cash Session -->
+            <div class="market-card selected-active" id="card-us" onclick="selectMarket('us')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇺🇸 United States (S&P 500 Index)</span>
+                        <span class="badge" id="badge-us-cash">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-us">
+                        <b>Opens:</b> 07:30 MDT (09:30 AM EDT)<br>
+                        <b>Benchmark Ticker:</b> FOREXCOM:SPXUSD
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=FOREXCOM%3ASPXUSD&colorTheme=dark&trendLineColor=rgba(74,222,128,1)&underLineColor=rgba(74,222,128,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> Primary North American cash trading session reflecting large-cap enterprise earnings, technology valuation, and consumer spending.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-us"></div>
+            </div>
+
+            <!-- Canada TSX -->
+            <div class="market-card" id="card-ca" onclick="selectMarket('ca')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇨🇦 Canada (TSX Composite)</span>
+                        <span class="badge" id="badge-ca">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-ca">
+                        <b>Opens:</b> 07:30 MDT (09:30 AM EDT)<br>
+                        <b>Benchmark Ticker:</b> TSX:TSX
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=TSX%3ATSX&colorTheme=dark&trendLineColor=rgba(56,189,248,1)&underLineColor=rgba(56,189,248,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> Reflects domestic North American energy production, mining extraction, financial services, and timber trade.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-ca"></div>
+            </div>
+
+            <!-- Brazil Bovespa -->
+            <div class="market-card" id="card-br" onclick="selectMarket('br')">
+                <div>
+                    <div class="market-header">
+                        <span class="market-title">🇧🇷 Brazil (IBOVESPA)</span>
+                        <span class="badge" id="badge-br">--</span>
+                    </div>
+                    <div class="market-meta" id="meta-br">
+                        <b>Opens:</b> 07:00 MDT (10:00 AM BRT)<br>
+                        <b>Benchmark Ticker:</b> BMFBOVESPA:IBOV
+                    </div>
+                    <div class="tv-widget-container">
+                        <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=BMFBOVESPA%3AIBOV&colorTheme=dark&trendLineColor=rgba(250,204,21,1)&underLineColor=rgba(250,204,21,0.15)&locale=en"></iframe>
+                    </div>
+                </div>
+                <div class="trend-box">
+                    <span class="trend-title">Geographic Lens:</span> South America's largest financial exchange, weighted heavily in iron ore, agricultural exports, and state oil enterprise dynamics.
+                </div>
+                <div class="mini-fragility-box" id="mini-box-br"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let selectedMarketKey = 'us';
+        let detectedStage = 3;
+        let quoteIndex = 0;
+
+        // Comprehensive Market Data Database
+        const marketDatabase = {
+            us: {
+                name: "US S&P 500 Index",
+                symbol: "$",
+                val: 7413.18,
+                vixName: "US VIX Index",
+                vix: 18.67,
+                spreadName: "US High-Yield Spread",
+                spread: 2.69,
+                leverageName: "US Broker Margin Debt",
+                leverageVal: 2.04,
+                historicalPath: [7100, 7160, 7220, 7280, 7330, 7370, 7413.18]
+            },
+            nz: {
+                name: "NZD/USD Exchange Rate",
+                symbol: "$",
+                val: 0.6120,
+                vixName: "FX Volatility (NZD)",
+                vix: 11.40,
+                spreadName: "NZ Sovereign Spread",
+                spread: 1.85,
+                leverageName: "FX Net Long Margin",
+                leverageVal: 1.15,
+                historicalPath: [0.5850, 0.5910, 0.5980, 0.6020, 0.6050, 0.6090, 0.6120]
+            },
+            au: {
+                name: "Australia ASX 200",
+                symbol: "A$",
+                val: 8240.50,
+                vixName: "ASX Volatility (A-VIX)",
+                vix: 13.80,
+                spreadName: "Aussie Credit Spread",
+                spread: 3.10,
+                leverageName: "ASX Margin Debt Ratio",
+                leverageVal: 1.65,
+                historicalPath: [7800, 7890, 7950, 8020, 8100, 8180, 8240.50]
+            },
+            jp: {
+                name: "Japan Nikkei 225",
+                symbol: "¥",
+                val: 38850.00,
+                vixName: "Nikkei VI",
+                vix: 22.40,
+                spreadName: "JGB Spread / Corp Risk",
+                spread: 1.95,
+                leverageName: "Yen Carry Leverage Ratio",
+                leverageVal: 2.35,
+                historicalPath: [35000, 35800, 36400, 37100, 37800, 38200, 38850]
+            },
+            kr: {
+                name: "South Korea Broad Market (EWY)",
+                symbol: "$",
+                val: 68.40,
+                vixName: "KOSPI Volatility (VKOSPI)",
+                vix: 19.80,
+                spreadName: "KR Corporate Debt Spread",
+                spread: 3.45,
+                leverageName: "Korean Margin Loan Debt",
+                leverageVal: 1.92,
+                historicalPath: [61.0, 62.5, 64.0, 65.2, 66.8, 67.5, 68.4]
+            },
+            cn: {
+                name: "Hong Kong Hang Seng Index",
+                symbol: "HK$",
+                val: 17850.30,
+                vixName: "VHSI Volatility Index",
+                vix: 24.60,
+                spreadName: "China Property High-Yield",
+                spread: 7.80,
+                leverageName: "HK Margin Debt Index",
+                leverageVal: 1.45,
+                historicalPath: [16200, 16500, 16900, 17100, 17400, 17650, 17850.30]
+            },
+            in: {
+                name: "India BSE Sensex",
+                symbol: "₹",
+                val: 81500.20,
+                vixName: "India VIX",
+                vix: 15.20,
+                spreadName: "India NBFC Credit Spread",
+                spread: 2.85,
+                leverageName: "Indian Domestic Margin Ratio",
+                leverageVal: 1.78,
+                historicalPath: [74000, 75500, 77000, 78200, 79600, 80800, 81500.20]
+            },
+            il: {
+                name: "Israel TA-35 Index",
+                symbol: "₪",
+                val: 2090.40,
+                vixName: "TASE Tech Volatility",
+                vix: 21.10,
+                spreadName: "Israeli Sovereign Bond Spread",
+                spread: 3.20,
+                leverageName: "Tel Aviv Leverage Ratio",
+                leverageVal: 1.30,
+                historicalPath: [1880, 1920, 1960, 2000, 2030, 2060, 2090.40]
+            },
+            uk: {
+                name: "UK FTSE 100 Index",
+                symbol: "£",
+                val: 8280.10,
+                vixName: "FTSE VIX (VFTSE)",
+                vix: 16.10,
+                spreadName: "UK Sterling High-Yield",
+                spread: 3.40,
+                leverageName: "London Broker Margin Ratio",
+                leverageVal: 1.55,
+                historicalPath: [7700, 7820, 7910, 8020, 8120, 8200, 8280.10]
+            },
+            de: {
+                name: "Germany DAX 40 Index",
+                symbol: "€",
+                val: 18520.60,
+                vixName: "VDAX-NEW Index",
+                vix: 17.50,
+                spreadName: "Euro Corp Spread (German)",
+                spread: 3.05,
+                leverageName: "EU Industrial Credit Debt",
+                leverageVal: 1.68,
+                historicalPath: [16800, 17100, 17450, 17800, 18100, 18350, 18520.60]
+            },
+            eu: {
+                name: "Eurozone STOXX Europe 50",
+                symbol: "€",
+                val: 4950.80,
+                vixName: "VSTOXX Index",
+                vix: 18.20,
+                spreadName: "Eurozone High-Yield Spread",
+                spread: 3.25,
+                leverageName: "Euro Area Financial Leverage",
+                leverageVal: 1.72,
+                historicalPath: [4500, 4580, 4670, 4750, 4820, 4890, 4950.80]
+            },
+            ca: {
+                name: "Canada TSX Composite",
+                symbol: "C$",
+                val: 23120.40,
+                vixName: "TSX Volatility (VIXC)",
+                vix: 15.80,
+                spreadName: "Canadian Corp High-Yield",
+                spread: 2.95,
+                leverageName: "Canadian Bank Credit Ratio",
+                leverageVal: 1.82,
+                historicalPath: [21200, 21600, 22000, 22350, 22650, 22900, 23120.40]
+            },
+            br: {
+                name: "Brazil IBOVESPA Index",
+                symbol: "R$",
+                val: 135800.00,
+                vixName: "Brazil Volatility (VXBR)",
+                vix: 25.30,
+                spreadName: "LatAm High-Yield Premium",
+                spread: 5.60,
+                leverageName: "B3 Exchange Margin Debt",
+                leverageVal: 2.15,
+                historicalPath: [122000, 125000, 128000, 130500, 132800, 134200, 135800]
+            }
+        };
+
+        let currentMetrics = { ...marketDatabase.us };
+
+        // 50 Detailed Minsky Quotes & Principles
+        const minskyQuotes = [
+            { title: "Minsky Paradox (Core Theorem):", text: "\"Stability breeds instability. The more comfortable market participants feel, the more risk they take, making the eventual correction more violent.\"" },
+            { title: "Minsky on Debt Transformation:", text: "\"Over a protracted period of good times, capitalist economies tend to move from a financial structure dominated by safe hedge units to a structure dominated by speculative and Ponzi finance.\"" },
+            { title: "Minsky on Market Equilibrium:", text: "\"A fundamental characteristic of our economy is that the financial system swings naturally between robustness and fragility—booms and busts are an inherent feature, not an anomaly.\"" },
+            { title: "Minsky on Margin Calls & Cascades:", text: "\"When Ponzi borrowers can no longer roll over debt, they are forced to sell assets. This dumping depresses asset values further, forcing even safe hedge units into margin insolvencies.\"" },
+            { title: "Minsky on Shadow Leverage:", text: "\"In good times, competition forces financial institutions to innovate around regulation, creating shadow leverage that inflates asset bubbles beyond central bank control.\"" },
+            { title: "Minsky on Two Theorems of FIH:", text: "\"The first theorem is that the economy has financing regimes under which it is stable. The second theorem is that over periods of prolonged prosperity, the economy transits from stable to unstable regimes.\"" },
+            { title: "Minsky on Euphoria & Blindness:", text: "\"In a period of euphoric expectations, lenders and borrowers alike accept leverage levels that assume best-case cash flows into perpetuity.\"" },
+            { title: "Minsky on Central Bank Lenders of Last Resort:", text: "\"Big Government and Big Central Banking are necessary anchors to prevent debt-deflation spirals from turning ordinary recessions into Great Depressions.\"" },
+            { title: "Minsky on Endogenous Risk:", text: "\"Capitalism is inherently unstable because the financial mechanisms that make investment possible are themselves unstable.\"" },
+            { title: "Minsky on Hedge Borrowers:", text: "\"Hedge financing units are those which can fulfill all of their contractual payment obligations by their cash flows from operations.\"" },
+            { title: "Minsky on Speculative Borrowers:", text: "\"Speculative units can meet their interest payment obligations out of cash flows, but must roll over or refinance their maturing principal liabilities.\"" },
+            { title: "Minsky on Ponzi Borrowers:", text: "\"For Ponzi units, cash flows from operations are not sufficient to fulfill either principal or interest payments. They survive only by issuing new debt or selling assets.\"" },
+            { title: "Minsky on Profit Opportunities:", text: "\"The drive for profit leads bankers to innovate in ways that stretch the liquidity safety margin of the financial system.\"" },
+            { title: "Minsky on Debt-Deflation Dynamics:", text: "\"When cash flow shortfalls force firms to sell out position to make position, asset prices collapse and real debt burdens rise.\"" },
+            { title: "Minsky on Historical Memory Loss:", text: "\"A prolonged period of growth dims the memory of past financial crashes, making market participants mistake structural fragility for permanent stability.\"" },
+            { title: "Minsky on Systemic Contagion:", text: "\"Unusual profit opportunities invite financial innovations that broaden liquidity, but eventually create credit webs that transfer shocks instantly across borders.\"" },
+            { title: "Minsky on Business Investment Pace:", text: "\"Finance sets the pace for the real economy. Investment decisions today dictate the debt repayment commitments of tomorrow.\"" },
+            { title: "Minsky on Liquidity Revaluation:", text: "\"During a boom, cash is treated as a drag on performance. During a panic, cash is the only asset that restores solvency.\"" },
+            { title: "Minsky on Economic Illusion:", text: "\"Soothsayers profligate in good times will proclaim that the business cycle has been banished forever—right before the bubble bursts.\"" },
+            { title: "Minsky on Market Volatility Re-pricing:", text: "\"Low volatility is not a sign of fundamental health; it is the catalyst that invites excessive leverage into the financial system.\"" },
+            { title: "Minsky on Monetary Tightening Spikes:", text: "\"When central banks tighten interest rates into an economy filled with speculative borrowers, those units are immediately transformed into Ponzi units.\"" },
+            { title: "Minsky on Moral Hazard:", text: "\"Interventions that rescue institutions from their mistakes encourage greater risk-taking in the subsequent expansion phase.\"" },
+            { title: "Minsky on Balance Sheet Interlocking:", text: "\"The economy is best understood not as abstract functions, but as a complex matrix of interlocking payment commitments and balance sheets.\"" },
+            { title: "Minsky on Asset Price Inflation reliance:", text: "\"Ponzi finance requires continuous asset price appreciation. The moment asset appreciation halts, Ponzi borrowers face immediate liquidation.\"" },
+            { title: "Minsky on Bank Competition Pressure:", text: "\"Prudent bankers lose market share to reckless bankers during the boom, creating irresistible pressure for everyone to lower credit standards.\"" },
+            { title: "Minsky on Refinancing Reliance:", text: "\"Any system that depends on continuous debt refinancing is vulnerable to sudden credit freezes and counterparty distrust.\"" },
+            { title: "Minsky on Animal Spirits:", text: "\"Booms and busts are driven by endogenous changes in financial commitments, amplified by human wave optimism and pessimism.\"" },
+            { title: "Minsky on Government Deficits as Stabilizers:", text: "\"Government deficits during a downturn sustain business profits and cash flows, preventing a total collapse of the private credit structure.\"" },
+            { title: "Minsky on Short-Term Debt Traps:", text: "\"Using short-term liabilities to fund long-term illiquid assets is the classic recipe for a financial systemic panic.\"" },
+            { title: "Minsky on Capital Asset Valuation:", text: "\"The value of capital assets depends upon expected future cash flows discounted by a yield structure that shifts wildly with market mood.\"" },
+            { title: "Minsky on Regulatory Arbitrage:", text: "\"Financial institutions will always evolve faster than regulators can design rules, continuously creating unmonitored shadow leverage.\"" },
+            { title: "Minsky on Debt Accumulation Limits:", text: "\"No debt expansion can outpace underlying cash flow growth indefinitely without eventually producing a debt liquidation crisis.\"" },
+            { title: "Minsky on the Illusion of Risk Models:", text: "\"Risk management models calibrated during peaceful periods inevitably fail when the structural regime shifts from robustness to fragility.\"" },
+            { title: "Minsky on Forced Asset Sales:", text: "\"Selling assets into an illiquid market to meet margin calls destroys asset values for all market participants simultaneously.\"" },
+            { title: "Minsky on Credit Spread Compression:", text: "\"Ultra-narrow credit spreads reflect dangerous market blindness rather than a genuine disappearance of default risk.\"" },
+            { title: "Minsky on Internal System Shocks:", text: "\"Crises do not require external shocks; the normal internal operations of capitalist finance generate shocks organically.\"" },
+            { title: "Minsky on Financial Innovation Double-Edge:", text: "\"Financial innovations expand liquidity in expansions, but become vectors for rapid contagion when confidence evaporates.\"" },
+            { title: "Minsky on Cash-Flow Cover Margin:", text: "\"The safety margin of the financial system is measured by the excess of cash receipts over mandatory debt service commitments.\"" },
+            { title: "Minsky on Post-Crisis Cautiousness:", text: "\"Immediately following a crash, hedge finance dominates as lenders and borrowers remain traumatized and risk-averse.\"" },
+            { title: "Minsky on the Transition to Speculation:", text: "\"As memories of the last crash fade, confidence returns, lending standards soften, and speculative borrowing takes root.\"" },
+            { title: "Minsky on Unraveling Credit Webs:", text: "\"In a complex financial economy, one prominent default can cascade through counterparty commitments and freeze systemic lending.\"" },
+            { title: "Minsky on Macroeconomic Architecture:", text: "\"To stabilize an unstable economy, policy must actively constrain speculative leverage while providing strong lender-of-last-resort backstops.\"" },
+            { title: "Minsky on Long Waves of Fragility:", text: "\"Systemic fragility builds slowly over decades of institutional evolution and extended periods without severe depressions.\"" },
+            { title: "Minsky on Investment Expectations:", text: "\"Investment decisions are made under radical uncertainty; expectations of future profit are fragile and prone to sudden collapse.\"" },
+            { title: "Minsky on Liquidity Demands in Crises:", text: "\"When solvency comes into question, liquidity becomes the only currency that matters across interbank credit markets.\"" },
+            { title: "Minsky on the Fallacy of Permanent Growth:", text: "\"Believing that economic growth has permanently eliminated structural risk is the precise psychological condition for a crash.\"" },
+            { title: "Minsky on Systemic Interdependence:", text: "\"Because one unit's liability is another unit's asset, debt defaults propagate geometrically through the balance sheet chain.\"" },
+            { title: "Minsky on Non-Bank Financial Intermediaries:", text: "\"Shadow banking channels amplify credit booms because they operate without direct access to central bank discount windows.\"" },
+            { title: "Minsky on Policy Dilemmas:", text: "\"Central banks face a paradox: intervening to prevent a panic preserves fragile debt structures, feeding inflation and future debt cycles.\"" },
+            { title: "Minsky's Ultimate Summary Principle:", text: "\"The main driver of financial fragility is the passage of time in a peaceful, prosperous economy. Tranquility is inherently destabilizing.\"" }
+        ];
+
+        const stageDescriptions = {
+            1: {
+                title: "Stage 1: Hedge Phase (Detected from Metrics)",
+                text: "Income easily covers both debt principal and interest payments globally. Volatility is elevated enough to deter excess leverage, credit spreads offer safety premiums, and broker margin debt sits at safe baseline levels.",
+            },
+            2: {
+                title: "Stage 2: Speculative Phase (Detected from Metrics)",
+                text: "Moderate market volatility encourages increased borrowing. Debt levels rise as cash flows cover interest payments, but debt principal relies on rolling over short-term credit facilities across major exchanges.",
+            },
+            3: {
+                title: "Stage 3: Ponzi Phase (Detected from Metrics)",
+                text: "Complacency reaches peak levels across global trading hubs. Low VIX volatility combined with tight credit spreads and elevated margin leverage indicates cash flows cover neither principal nor interest—participants rely on continuous asset price inflation.",
+            },
+            4: {
+                title: "Stage 4: Minsky Moment (Detected from Metrics)",
+                text: "Extreme volatility spike or credit spread widening triggers forced liquidation. Margin calls cascade sequentially through open markets—starting in Asia-Pacific overnight and transmitting into European and American cash sessions.",
+            }
+        };
+
+        const ctxStress = document.getElementById('stressChart').getContext('2d');
+        const stressChart = new Chart(ctxStress, {
+            type: 'line',
+            data: {
+                labels: ['6 Mo Ago', '5 Mo Ago', '4 Mo Ago', '3 Mo Ago', '2 Mo Ago', '1 Mo Ago', 'Now'],
+                datasets: [{
+                    label: 'Market Path Composite',
+                    data: currentMetrics.historicalPath,
+                    borderColor: '#38bdf8',
+                    borderWidth: 3,
+                    pointRadius: 3,
+                    tension: 0.25
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#94a3b8' } } },
+                scales: {
+                    x: { ticks: { color: '#64748b' }, grid: { color: '#1f2937' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#1f2937' } }
+                }
+            }
+        });
+
+        function getSeverityColor(score) {
+            if (score >= 75) return { color: '#ef4444', label: 'HIGH RISK / DANGER' };
+            if (score >= 45) return { color: '#facc15', label: 'ELEVATED RISK' };
+            return { color: '#4ade80', label: 'ROBUST / LOW RISK' };
+        }
+
+        function classifyMinskyStage(metrics) {
+            const vix = metrics.vix;
+            const spread = metrics.spread;
+            const leverage = metrics.leverageVal;
+
+            if (vix >= 28.0 || spread >= 6.5) {
+                return 4; // Minsky Moment
+            } else if (vix < 20.0 && spread < 3.50 && leverage > 1.85) {
+                return 3; // Ponzi Phase
+            } else if (vix < 24.0 && leverage > 1.35) {
+                return 2; // Speculative Phase
+            } else {
+                return 1; // Hedge Phase
+            }
+        }
+
+        function calculateFragilityScore(metrics) {
+            const complacency = Math.min(100, Math.max(0, Math.round(100 - (metrics.vix * 2.8))));
+            const creditCompression = Math.min(100, Math.max(0, Math.round(100 - (metrics.spread * 12))));
+            const leverageScore = Math.min(100, Math.max(0, Math.round((metrics.leverageVal / 2.5) * 100)));
+
+            const compositeScore = Math.round((complacency * 0.35) + (creditCompression * 0.35) + (leverageScore * 0.30));
+            return { compositeScore, complacency, creditCompression };
+        }
+
+        function renderAllMarketMiniCards() {
+            for (let key in marketDatabase) {
+                const mData = marketDatabase[key];
+                const sData = calculateFragilityScore(mData);
+                const sev = getSeverityColor(sData.compositeScore);
+                const compSev = getSeverityColor(sData.complacency);
+                const credSev = getSeverityColor(sData.creditCompression);
+
+                const miniBox = document.getElementById(`mini-box-${key}`);
+                if (!miniBox) continue;
+
+                miniBox.style.borderColor = sev.color;
+                miniBox.innerHTML = `
+                    <div class="mini-score-header">
+                        <div class="mini-score-circle" style="border-color: ${sev.color};">
+                            <span class="mini-score-num">${sData.compositeScore}%</span>
+                        </div>
+                        <div class="mini-score-meta">
+                            <span class="mini-score-title" style="color: ${sev.color};">${sev.label}</span>
+                            <span class="mini-score-sub">Systemic Fragility Rating</span>
+                        </div>
+                    </div>
+                    <div class="mini-meter-row">
+                        <div class="mini-meter-lbl">
+                            <span>Complacency</span>
+                            <span style="color: ${compSev.color};">${sData.complacency}%</span>
+                        </div>
+                        <div class="mini-meter-bg">
+                            <div class="mini-meter-fill" style="width: ${sData.complacency}%; background: ${compSev.color};"></div>
+                        </div>
+                    </div>
+                    <div class="mini-meter-row">
+                        <div class="mini-meter-lbl">
+                            <span>Credit Compression</span>
+                            <span style="color: ${credSev.color};">${sData.creditCompression}%</span>
+                        </div>
+                        <div class="mini-meter-bg">
+                            <div class="mini-meter-fill" style="width: ${sData.creditCompression}%; background: ${credSev.color};"></div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function updateDashboardUI() {
+            detectedStage = classifyMinskyStage(currentMetrics);
+            const scoreData = calculateFragilityScore(currentMetrics);
+
+            // Update Header / Titles
+            document.getElementById('lbl-market-name').innerText = currentMetrics.name;
+            document.getElementById('lbl-vix-name').innerText = currentMetrics.vixName;
+            document.getElementById('lbl-spread-name').innerText = currentMetrics.spreadName;
+            document.getElementById('lbl-leverage-name').innerText = currentMetrics.leverageName;
+            document.getElementById('chart-title-text').innerText = `Minsky Instability Cycle (${currentMetrics.name})`;
+
+            // 1. Update Top Metric Values
+            const valFormatted = currentMetrics.val < 10 ? currentMetrics.val.toFixed(4) : currentMetrics.val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('m-sp500').innerText = `${currentMetrics.symbol}${valFormatted}`;
+            document.getElementById('m-vix').innerText = currentMetrics.vix.toFixed(2);
+            document.getElementById('m-spread').innerText = `${currentMetrics.spread.toFixed(2)}%`;
+            document.getElementById('m-leverage').innerText = `${currentMetrics.leverageVal.toFixed(2)}%`;
+
+            // 2. Update Metric Badges
+            const badgeSp = document.getElementById('badge-sp500');
+            const badgeVix = document.getElementById('badge-vix');
+            const badgeSpread = document.getElementById('badge-spread');
+            const badgeLev = document.getElementById('badge-leverage');
+
+            if (currentMetrics.val > currentMetrics.historicalPath[0]) {
+                badgeSp.innerText = "ELEVATED PEAK"; badgeSp.className = "danger-badge danger-yellow";
+            } else {
+                badgeSp.innerText = "DISCOUNT VALUE"; badgeSp.className = "danger-badge danger-green";
+            }
+
+            if (currentMetrics.vix < 14) {
+                badgeVix.innerText = "88% DANGER"; badgeVix.className = "danger-badge danger-red";
+            } else if (currentMetrics.vix < 22) {
+                badgeVix.innerText = "52% WARN"; badgeVix.className = "danger-badge danger-yellow";
+            } else {
+                badgeVix.innerText = "20% SAFE"; badgeVix.className = "danger-badge danger-green";
+            }
+
+            if (currentMetrics.spread < 3.5) {
+                badgeSpread.innerText = "82% DANGER"; badgeSpread.className = "danger-badge danger-red";
+            } else if (currentMetrics.spread < 5.5) {
+                badgeSpread.innerText = "45% WARN"; badgeSpread.className = "danger-badge danger-yellow";
+            } else {
+                badgeSpread.innerText = "15% SAFE"; badgeSpread.className = "danger-badge danger-green";
+            }
+
+            if (currentMetrics.leverageVal > 2.0) {
+                badgeLev.innerText = "88% DANGER"; badgeLev.className = "danger-badge danger-red";
+            } else {
+                badgeLev.innerText = "30% SAFE"; badgeLev.className = "danger-badge danger-green";
+            }
+
+            // 3. Highlight Stepper Navigation
+            for(let i=1; i<=4; i++) {
+                const btn = document.getElementById(`btn-stage-${i}`);
+                if (i === detectedStage) {
+                    btn.classList.add('active');
+                    btn.innerText = `${i}. ${['Hedge Phase', 'Speculative Phase', 'Ponzi Phase', 'Minsky Moment'][i-1]} (ACTIVE)`;
+                } else {
+                    btn.classList.remove('active');
+                    btn.innerText = `${i}. ${['Hedge Phase', 'Speculative Phase', 'Ponzi Phase', 'Minsky Moment'][i-1]}`;
+                }
+            }
+
+            // 4. Update Lesson & Stage Description
+            const stageInfo = stageDescriptions[detectedStage];
+            document.getElementById('lesson-title').innerText = stageInfo.title;
+            document.getElementById('lesson-text').innerText = stageInfo.text;
+
+            // 5. Update Main Score Box
+            const mainSev = getSeverityColor(scoreData.compositeScore);
+            const compSev = getSeverityColor(scoreData.complacency);
+            const credSev = getSeverityColor(scoreData.creditCompression);
+
+            document.getElementById('main-scorebox').style.borderColor = mainSev.color;
+            document.getElementById('main-score-circle').style.borderColor = mainSev.color;
+            document.getElementById('agg-score-num').innerText = `${scoreData.compositeScore}%`;
+
+            const scoreTitleElem = document.getElementById('agg-score-title');
+            scoreTitleElem.innerText = mainSev.label;
+            scoreTitleElem.style.color = mainSev.color;
+
+            const lblComp = document.getElementById('lbl-complacency');
+            lblComp.innerText = `${scoreData.complacency}% (${scoreData.complacency > 70 ? 'HIGH' : 'MODERATE'})`;
+            lblComp.style.color = compSev.color;
+            const barComp = document.getElementById('bar-complacency');
+            barComp.style.width = `${scoreData.complacency}%`;
+            barComp.style.background = compSev.color;
+
+            const lblCred = document.getElementById('lbl-credit');
+            lblCred.innerText = `${scoreData.creditCompression}% (${scoreData.creditCompression > 70 ? 'TAUT' : 'FAIR'})`;
+            lblCred.style.color = credSev.color;
+            const barCred = document.getElementById('bar-credit');
+            barCred.style.width = `${scoreData.creditCompression}%`;
+            barCred.style.background = credSev.color;
+
+            // 6. Update Stress Chart Path
+            let pathData = [...currentMetrics.historicalPath];
+            if (detectedStage === 4) {
+                const baseVal = pathData[0];
+                pathData = [baseVal * 1.05, baseVal * 0.98, baseVal * 0.90, baseVal * 0.82, baseVal * 0.75, baseVal * 0.70, currentMetrics.val];
+            } else {
+                pathData[6] = currentMetrics.val;
+            }
+            stressChart.data.datasets[0].label = `${currentMetrics.name} Path`;
+            stressChart.data.datasets[0].data = pathData;
+            stressChart.data.datasets[0].borderColor = detectedStage === 4 ? '#f87171' : (detectedStage === 3 ? '#facc15' : '#38bdf8');
+            stressChart.update();
+
+            renderAllMarketMiniCards();
+        }
+
+        function selectMarket(marketKey) {
+            if (!marketDatabase[marketKey]) return;
+            selectedMarketKey = marketKey;
+            currentMetrics = { ...marketDatabase[marketKey] };
+
+            document.querySelectorAll('.market-card').forEach(card => card.classList.remove('selected-active'));
+            const activeCard = document.getElementById(`card-${marketKey}`);
+            if (activeCard) activeCard.classList.add('selected-active');
+
+            addLog(`🌐 <strong>Switched Target Market:</strong> Top dashboard now monitoring <strong>${currentMetrics.name}</strong> on this page.`);
+            updateDashboardUI();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function fetchRealMarketData() {
+            if (selectedMarketKey === 'us') {
+                try {
+                    const res = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/^GSPC?interval=1m&range=1d'));
+                    if (res.ok) {
+                        const data = await res.json();
+                        const parsed = JSON.parse(data.contents);
+                        const quote = parsed?.chart?.result?.[0]?.meta?.regularMarketPrice;
+                        if (quote && !isNaN(quote)) {
+                            currentMetrics.val = parseFloat(quote);
+                            marketDatabase.us.val = parseFloat(quote);
+                        }
+                    }
+                } catch (err) {}
+
+                try {
+                    const resVix = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/^VIX?interval=1m&range=1d'));
+                    if (resVix.ok) {
+                        const dataVix = await resVix.json();
+                        const parsedVix = JSON.parse(dataVix.contents);
+                        const quoteVix = parsedVix?.chart?.result?.[0]?.meta?.regularMarketPrice;
+                        if (quoteVix && !isNaN(quoteVix)) {
+                            currentMetrics.vix = parseFloat(quoteVix);
+                            marketDatabase.us.vix = parseFloat(quoteVix);
+                        }
+                    }
+                } catch (err) {}
+            }
+
+            updateDashboardUI();
+        }
+
+        function rotateMinskyQuote() {
+            quoteIndex = (quoteIndex + 1) % minskyQuotes.length;
+            const quote = minskyQuotes[quoteIndex];
+            document.getElementById('minsky-quote-title').innerText = quote.title;
+            document.getElementById('minsky-quote-text').innerText = quote.text;
+            const btn = document.querySelector('.quote-box button');
+            if (btn) btn.innerText = `↻ Rotate Paradox Principle (${quoteIndex + 1} / ${minskyQuotes.length})`;
+        }
+
+        function addLog(msg) {
+            const log = document.getElementById('eventLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = msg;
+            log.prepend(entry);
+        }
+
+        function triggerInstructionalShock(shockPct) {
+            const dropPct = Math.abs(shockPct * 100);
+            currentMetrics.val = currentMetrics.val * (1 + shockPct);
+            currentMetrics.vix = Math.max(currentMetrics.vix * 1.65, 32.0);
+            currentMetrics.spread = currentMetrics.spread + (dropPct * 0.85);
+
+            addLog(`⚠️ <strong>Simulated Shock (-${dropPct}%) on ${currentMetrics.name}:</strong> Live metrics re-evaluated. Index dropped to ${currentMetrics.symbol}${currentMetrics.val.toFixed(2)}, Volatility spiked to ${currentMetrics.vix.toFixed(2)}, Spreads widened to ${currentMetrics.spread.toFixed(2)}%.`);
+            updateDashboardUI();
+        }
+
+        function switchTab(regionId, evt) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(regionId).classList.add('active');
+            if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+        }
+
+        function getMountainTimezoneLabel(date) {
+            const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
+            const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
+            return (date.getTimezoneOffset() < Math.max(jan, jul)) ? 'MDT' : 'MST';
+        }
+
+        function updateClockAndStatuses() {
+            const now = new Date();
+            const options = { timeZone: 'America/Denver', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            const mtTimeStr = new Intl.DateTimeFormat('en-US', options).format(now);
+            const tzLabel = getMountainTimezoneLabel(now);
+
+            document.getElementById('localClock').innerText = `${mtTimeStr} ${tzLabel}`;
+
+            document.getElementById('tab-label-asia').innerText = `1. Asia-Pacific (${tzLabel === 'MDT' ? '18:00 - 02:00' : '17:00 - 01:00'} ${tzLabel})`;
+            document.getElementById('tab-label-me-sa').innerText = `2. Middle East & South Asia (${tzLabel === 'MDT' ? '22:00 - 06:00' : '21:00 - 05:00'} ${tzLabel})`;
+            document.getElementById('tab-label-europe').innerText = `3. Europe & Africa (${tzLabel === 'MDT' ? '02:00 - 10:30' : '01:00 - 09:30'} ${tzLabel})`;
+            document.getElementById('tab-label-americas').innerText = `4. Americas (${tzLabel === 'MDT' ? '07:30 - 15:00' : '06:30 - 14:00'} ${tzLabel})`;
+
+            const hoursMap = tzLabel === 'MDT' ? {
+                nz: '15:00 MDT', au: '18:00 MDT (10:00 AM AEST)', jp: '18:00 MDT (09:00 AM JST)', kr: '18:00 MDT (09:00 AM KST)',
+                cn: '19:30 MDT (09:30 AM HKT)', in: '21:45 MDT (09:15 AM IST)', il: '01:00 MDT (10:00 AM IDT)', uk: '02:00 MDT (08:00 AM BST)',
+                de: '02:00 MDT (09:00 AM CEST)', eu: '02:00 MDT (09:00 AM CEST)', us: '07:30 MDT (09:30 AM EDT)', ca: '07:30 MDT (09:30 AM EDT)',
+                br: '07:00 MDT (10:00 AM BRT)'
+            } : {
+                nz: '14:00 MST', au: '17:00 MST (10:00 AM AEST)', jp: '17:00 MST (09:00 AM JST)', kr: '17:00 MST (09:00 AM KST)',
+                cn: '18:30 MST (09:30 AM HKT)', in: '20:45 MST (09:15 AM IST)', il: '00:00 MST (10:00 AM IDT)', uk: '01:00 MST (08:00 AM BST)',
+                de: '01:00 MST (09:00 AM CEST)', eu: '01:00 MST (09:00 AM CEST)', us: '06:30 MST (09:30 AM EST)', ca: '06:30 MST (09:30 AM EST)',
+                br: '06:00 MST (10:00 AM BRT)'
+            };
+
+            const tickers = { nz: 'FX:NZDUSD', au: 'ASX:XJO', jp: 'OANDA:JP225USD', kr: 'AMEX:EWY', cn: 'HSI:HSI', in: 'BSE:SENSEX', il: 'TASE:TA35', uk: 'FOREXCOM:UK100', de: 'XETR:DAX', eu: 'FOREXCOM:EU50', us: 'FOREXCOM:SPXUSD', ca: 'TSX:TSX', br: 'BMFBOVESPA:IBOV' };
+            for (let k in hoursMap) {
+                const elem = document.getElementById(`meta-${k}`);
+                if (elem) elem.innerHTML = `<b>Opens:</b> ${hoursMap[k]}<br><b>Benchmark Ticker:</b> ${tickers[k]}`;
+            }
+
+            const day = now.getUTCDay(); 
+            const hour = now.getUTCHours();
+            const mins = now.getUTCMinutes();
+            const totalUtcMins = hour * 60 + mins;
+
+            function setBadge(id, openMin, closeMin, validDays = [1, 2, 3, 4, 5]) {
+                const badge = document.getElementById(id);
+                if (!badge) return;
+                badge.className = 'badge';
+
+                if (validDays.includes(day)) {
+                    if (totalUtcMins >= openMin && totalUtcMins < closeMin) {
+                        badge.classList.add('badge-open');
+                        badge.innerText = '● LIVE NOW';
+                        return;
+                    } else if (totalUtcMins >= openMin - 60 && totalUtcMins < openMin) {
+                        badge.classList.add('badge-pre');
+                        badge.innerText = '◐ PRE-MARKET';
+                        return;
+                    }
+                }
+                badge.classList.add('badge-closed');
+                badge.innerText = '○ CLOSED';
+            }
+
+            setBadge('badge-nz', 21 * 60, 24 * 60, [0, 1, 2, 3, 4]);
+            setBadge('badge-au', 0 * 60, 6 * 60 + 45);
+            setBadge('badge-jp', 0 * 60, 6 * 60 + 30);
+            setBadge('badge-kr', 0 * 60, 6 * 60 + 30);
+            setBadge('badge-cn', 1 * 60 + 30, 8 * 60);
+            setBadge('badge-in', 3 * 60 + 45, 10 * 60);
+            setBadge('badge-il', 7 * 60, 14 * 60 + 25, [0, 1, 2, 3, 4]);
+            setBadge('badge-uk', 8 * 60, 16 * 60 + 30);
+            setBadge('badge-de', 8 * 60, 16 * 60 + 30);
+            setBadge('badge-eu', 8 * 60, 16 * 60 + 30);
+            setBadge('badge-us-cash', 13 * 60 + 30, 20 * 60);
+            setBadge('badge-ca', 13 * 60 + 30, 20 * 60);
+            setBadge('badge-br', 13 * 60, 20 * 60);
+        }
+
+        function startAligned20SecClock() {
+            updateClockAndStatuses();
+
+            const now = new Date();
+            const currentSec = now.getSeconds();
+            const currentMs = now.getMilliseconds();
+            
+            const msIn20SecCycle = (currentSec % 20) * 1000 + currentMs;
+            const msUntilNextCycle = 20000 - msIn20SecCycle;
+
+            setTimeout(() => {
+                updateClockAndStatuses();
+                setInterval(updateClockAndStatuses, 20000);
+            }, msUntilNextCycle);
+        }
+
+        function saveApiKeyLocally() {
+            const keyVal = document.getElementById('geminiApiKey').value.trim();
+            if (keyVal) {
+                localStorage.setItem('minsky_gemini_api_key', keyVal);
+                document.getElementById('keyStatus').innerText = '✓ Saved in local browser';
+            } else {
+                localStorage.removeItem('minsky_gemini_api_key');
+                document.getElementById('keyStatus').innerText = '';
+            }
+        }
+
+        function loadSavedApiKey() {
+            const savedKey = localStorage.getItem('minsky_gemini_api_key');
+            if (savedKey) {
+                document.getElementById('geminiApiKey').value = savedKey;
+                document.getElementById('keyStatus').innerText = '✓ Restored from local storage';
+                fetchModelsUI();
+            } else {
+                document.getElementById('geminiApiKey').value = "";
+                document.getElementById('keyStatus').innerText = 'Input API Key to begin';
+            }
+        }
+
+        // Active production models explicitly populated in order from fastest to deepest thinker
+        async function fetchModelsUI() {
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+            const status = document.getElementById('keyStatus');
+            const selector = document.getElementById('modelSelector');
+            const btn = document.getElementById('btnFetchModels');
+
+            if (!apiKey) {
+                status.innerText = "No key provided";
+                status.style.color = "#f87171";
+                return;
+            }
+
+            btn.innerText = "Loading...";
+            status.innerText = "Fetching models...";
+            status.style.color = "#facc15";
+
+            // Static list of active model endpoints ordered from fastest to deepest thinker
+            const supportedActiveModels = [
+                {
+                    id: "models/gemini-3.5-flash-lite",
+                    displayText: "⚡ Flash-Lite (Fastest Sub-Second Response | Low Latency, Basic Reasoning)"
+                },
+                {
+                    id: "models/gemini-3.6-flash",
+                    displayText: "🚀 Flash 3.6 (Ultra-Fast & Versatile Workhorse | High Speed, Balanced Analysis)"
+                },
+                {
+                    id: "models/gemini-3.5-flash",
+                    displayText: "🎯 Flash 3.5 (Fast Execution & Long Context | Efficient Macro Analysis)"
+                },
+                {
+                    id: "models/gemini-3.1-pro",
+                    displayText: "🧠 Pro 3.1 (Deepest Thinker | Slower Response, Maximum Deep Synthesis)"
+                }
+            ];
+
+            try {
+                // Query API endpoint list to confirm availability against the API key
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                const data = await res.json();
+
+                selector.innerHTML = '<option value="">Select active model (Fastest -> Deepest)...</option>';
+
+                if (res.ok && data.models) {
+                    const fetchedNames = data.models.map(m => m.name);
+                    
+                    // Filter down to supported active models returned by your API key
+                    const activeMatches = supportedActiveModels.filter(m => fetchedNames.includes(m.id));
+
+                    const listToUse = activeMatches.length > 0 ? activeMatches : supportedActiveModels;
+
+                    listToUse.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.innerText = m.displayText;
+                        selector.appendChild(opt);
+                    });
+
+                    status.innerText = `✓ Loaded ${listToUse.length} Active Models`;
+                    status.style.color = "#4ade80";
+                } else {
+                    // Fallback to active model list if endpoint listing is restricted
+                    supportedActiveModels.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.innerText = m.displayText;
+                        selector.appendChild(opt);
+                    });
+                    status.innerText = `✓ Loaded Active Models`;
+                    status.style.color = "#4ade80";
+                }
+
+                selector.style.display = 'block';
+                btn.innerText = "Refresh Models";
+
+                // Auto-select fastest standard model (Flash 3.6)
+                if (selector.options.length > 2) {
+                    selector.selectedIndex = 2;
+                } else if (selector.options.length > 1) {
+                    selector.selectedIndex = 1;
+                }
+
+            } catch (err) {
+                // If network fetch fails, populate supported active models directly
+                selector.innerHTML = '<option value="">Select active model (Fastest -> Deepest)...</option>';
+                supportedActiveModels.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.innerText = m.displayText;
+                    selector.appendChild(opt);
+                });
+                selector.style.display = 'block';
+                if (selector.options.length > 1) selector.selectedIndex = 1;
+
+                status.innerText = "Loaded Active Models";
+                status.style.color = "#4ade80";
+            } finally {
+                btn.innerText = "Load Models";
+            }
+        }
+
+        async function sendGeminiQuery() {
+            const input = document.getElementById('chatInput');
+            const history = document.getElementById('chatHistory');
+            const userText = input.value.trim();
+            if (!userText) return;
+
+            const selectedModel = document.getElementById('modelSelector').value;
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+
+            if (!apiKey) {
+                alert("Please enter an API key first.");
+                return;
+            }
+
+            if (!selectedModel) {
+                alert("Please click 'Load Models' and select a model from the dropdown before chatting.");
+                return;
+            }
+
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-msg user';
+            userMsg.innerHTML = `<span class="chat-msg-sender">You</span>${escapeHtml(userText)}`;
+            history.appendChild(userMsg);
+            input.value = '';
+            history.scrollTop = history.scrollHeight;
+
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'chat-msg gemini';
+            loadingMsg.innerHTML = `<span class="chat-msg-sender">Gemini Macro Analyst</span><i>Analyzing query with model ${selectedModel.replace('models/', '')}...</i>`;
+            history.appendChild(loadingMsg);
+            history.scrollTop = history.scrollHeight;
+
+            const liveClock = document.getElementById('localClock').innerText;
+            const scoreData = calculateFragilityScore(currentMetrics);
+
+            // Updated Context: Strictly answers only what the user directly asks while keeping dashboard data in mind silently
+            const contextPrompt = `You are an expert macroeconomic analyst and market strategist.
+
+BACKGROUND DASHBOARD TELEMETRY (Keep this in mind for context, but DO NOT mention or summarize any of it unless the user specifically asks about markets, Minsky, time, or metrics):
+- Live Local Clock: ${liveClock}
+- Active Market: ${currentMetrics.name} (${currentMetrics.symbol}${currentMetrics.val.toLocaleString()})
+- Volatility (${currentMetrics.vixName}): ${currentMetrics.vix.toFixed(2)}
+- Credit Spread (${currentMetrics.spreadName}): ${currentMetrics.spread.toFixed(2)}%
+- Leverage Ratio: ${currentMetrics.leverageVal.toFixed(2)}%
+- Fragility Score: ${scoreData.compositeScore}%
+- Minsky Phase: Stage ${detectedStage} (${stageDescriptions[detectedStage].title})
+
+CRITICAL RESPONSE RULES:
+1. Directly answer the user's question concisely without filler.
+2. Keep the dashboard telemetry in mind as background awareness, but DO NOT summarize, analyze, or bring up the dashboard metrics/Minsky stages unless explicitly requested by the user.
+
+USER QUESTION: "${userText}"`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: contextPrompt }]
+                        }],
+                        safetySettings: [
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.candidates && data.candidates[0]?.content?.parts) {
+                    let replyText = "";
+                    data.candidates[0].content.parts.forEach(part => {
+                        if (part.text) replyText += part.text;
+                    });
+                    const cleanModelName = selectedModel.replace('models/', '');
+                    loadingMsg.innerHTML = `<span class="chat-msg-sender">Gemini Macro Analyst (${cleanModelName})</span>${formatMarkdown(replyText)}`;
+                } else {
+                    const finalError = data.error?.message || "API error during generation.";
+                    loadingMsg.className = 'chat-msg gemini error';
+                    loadingMsg.innerHTML = `<span class="chat-msg-sender" style="color: #f87171;">⚠️ Request Issue</span>${finalError}`;
+                }
+
+            } catch (err) {
+                loadingMsg.className = 'chat-msg gemini error';
+                loadingMsg.innerHTML = `<span class="chat-msg-sender" style="color: #f87171;">⚠️ Connection Error</span>${err.message}`;
+            }
+            
+            history.scrollTop = history.scrollHeight;
+        }
+
+        function escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+        function formatMarkdown(text) { return escapeHtml(text).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>'); }
+
+        // Initialize Engine
+        loadSavedApiKey();
+        updateDashboardUI();
+        fetchRealMarketData();
+        startAligned20SecClock();
+        setInterval(fetchRealMarketData, 30000);
+    </script>
+</body>
+</html>
